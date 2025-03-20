@@ -34,8 +34,6 @@ export default function WithdrawTokens() {
 
   return (
     <div className="flex flex-col items-center gap-2 w-full">
-      <div>Withdraw Tokens</div>
-
       <form
         onSubmit={handleSubmitWithdrawTokens}
         className="flex flex-col gap-2 w-full"

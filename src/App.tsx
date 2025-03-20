@@ -12,12 +12,21 @@ import { SendTokens } from "./components/SendToken";
 import WithdrawTokens from "./components/WithdrawTokens";
 import { Divider } from "./components/Divider";
 
+enum View {
+  INITIALIZE = "INITIALIZE",
+  DEPOSIT = "DEPOSIT",
+  CREATE = "CREATE",
+  WITHDRAW = "WITHDRAW",
+}
+
 function App() {
   const [currentAccount, setCurrentAccount] = useState<string>("");
   const [admin, setAdmin] = useState<string>("");
   const [nativeToken, setNativeToken] = useState<string>("");
   const [signedTxXdr, setSignedTxXdr] = useState<string>("");
   const [hashId, setHashId] = useState<string>("");
+
+  const [view, setView] = useState<View>(View.INITIALIZE);
 
   useEffect(() => {
     async function connectWallet() {
@@ -34,12 +43,14 @@ function App() {
     e.preventDefault();
 
     const client = await stellarService.buildClient<IContract>(currentAccount);
-    const xdr = await client.initialize({
-      admin: admin,
-      token: nativeToken,
-    });
+    const xdr = (
+      await client.initialize({
+        admin: admin,
+        token: nativeToken,
+      })
+    ).toXDR();
 
-    const signedTx = await walletService.signTransaction(xdr.toXDR());
+    const signedTx = await walletService.signTransaction(xdr);
 
     setSignedTxXdr(signedTx.signedTxXdr);
   };
@@ -58,49 +69,83 @@ function App() {
     <div className="flex flex-col items-center justify-center gap-4 w-full">
       <h1>Bienvenidos al workshop organizado por BAF</h1>
 
+      <nav className="flex gap-4 p-4">
+        <Button onClick={() => setView(View.INITIALIZE)}>Initialize</Button>
+        <Button onClick={() => setView(View.CREATE)}>Create clients</Button>
+        <Button onClick={() => setView(View.DEPOSIT)}>Deposit</Button>
+        <Button onClick={() => setView(View.WITHDRAW)}>Withdraw</Button>
+      </nav>
+
       <Input label="Cuenta" value={currentAccount} disabled={true} />
 
-      <Input
-        label="GX3SGA..."
-        value={admin}
-        onChange={({ target }) => setAdmin(target.value)}
-      />
-
-      <Input
-        label="Native token"
-        value={nativeToken}
-        onChange={({ target }) => setNativeToken(target.value)}
-      />
-
-      <Button onClick={handleInitializeContract}>Inicializar contrato</Button>
-
-      {signedTxXdr.length > 0 && (
+      {view === View.INITIALIZE && (
         <>
-          <textarea
-            disabled
-            value={signedTxXdr}
-            className="w-full bg-slate-100 text-slate-700 rounded-xl p-2"
-            rows={10}
-            cols={40}
-          ></textarea>
+          <Divider />
 
-          <Button onClick={handleSubmitTransaction}>
-            Submitear transaccion a la red
+          <h2>Initialize</h2>
+          <Input
+            label="GX3SGA..."
+            value={admin}
+            onChange={({ target }) => setAdmin(target.value)}
+          />
+
+          <Input
+            label="Native token"
+            value={nativeToken}
+            onChange={({ target }) => setNativeToken(target.value)}
+          />
+
+          <Button onClick={handleInitializeContract}>
+            Inicializar contrato
           </Button>
 
-          {hashId.length > 0 && <StellarExpertLink url={hashId} />}
+          {signedTxXdr.length > 0 && (
+            <>
+              <textarea
+                disabled
+                value={signedTxXdr}
+                className="w-full bg-slate-100 text-slate-700 rounded-xl p-2"
+                rows={10}
+                cols={40}
+              ></textarea>
+
+              <Button onClick={handleSubmitTransaction}>
+                Submitear transaccion a la red
+              </Button>
+
+              {hashId.length > 0 && <StellarExpertLink url={hashId} />}
+            </>
+          )}
         </>
       )}
 
-      <Divider />
+      {view === View.CREATE && (
+        <>
+          <Divider />
 
-      <CreateClient adminWallet={currentAccount} />
-      <CreateReciever adminWallet={currentAccount} />
+          <h2>Create clients</h2>
+          <CreateClient adminWallet={currentAccount} />
+          <CreateReciever adminWallet={currentAccount} />
+        </>
+      )}
 
-      <Divider />
+      {view === View.DEPOSIT && (
+        <>
+          <Divider />
 
-      <SendTokens currentWallet={currentAccount} />
-      <WithdrawTokens />
+          <h2>Send tokens</h2>
+          <SendTokens currentWallet={currentAccount} />
+        </>
+      )}
+
+      {view === View.WITHDRAW && (
+        <>
+          <Divider />
+
+          <h2>Withdraw tokens</h2>
+          <WithdrawTokens />
+        </>
+      )}
     </div>
   );
 }

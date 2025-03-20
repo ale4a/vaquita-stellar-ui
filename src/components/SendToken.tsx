@@ -39,8 +39,6 @@ export function SendTokens({ currentWallet }: IProps) {
 
   return (
     <div className="flex flex-col items-center gap-2 w-full">
-      <div>SendTokens</div>
-
       <form onSubmit={handleSendTokens} className="flex flex-col gap-2 w-full">
         <Input
           label="Receiver"

@@ -21,7 +21,7 @@ export class StellarService {
 
     this.networkPassphrase = Networks.TESTNET;
     this.contractAddress =
-      "CCTFV2B2HE476K2Z6U6AEYHF5HI6M4D27MJVWEDAOYPJ2RJW2IDTXKUQ";
+      "CAOYBB6TULYCAFFGAZN7H6PYOS73QL234WL7TC5UKVQ6WJECNOYMBU7E";
   }
 
   async loadAccount(address: string) {
