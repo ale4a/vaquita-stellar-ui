@@ -1,151 +1,110 @@
 import { useEffect, useState } from "react";
 import "./App.css";
-import Button from "./components/Button";
-import Input from "./components/Input";
-import { stellarService } from "@services/stellar.service";
-import { IContract } from "@interfaces/contracts/contract.interface";
 import { walletService } from "@services/wallet.service";
-import CreateClient from "./components/CreateClient";
-import StellarExpertLink from "./components/StellarExpertLink";
-import CreateReciever from "./components/CreateReceiver";
-import { SendTokens } from "./components/SendToken";
-import WithdrawTokens from "./components/WithdrawTokens";
-import { Divider } from "./components/Divider";
-
-enum View {
-  INITIALIZE = "INITIALIZE",
-  DEPOSIT = "DEPOSIT",
-  CREATE = "CREATE",
-  WITHDRAW = "WITHDRAW",
-}
+import StatsCard from "./components/StatsCard";
+import { FaSave } from "react-icons/fa";
+import { BiMoney } from "react-icons/bi";
+import { FaTelegram, FaTwitter } from "react-icons/fa";
+import Swal from "sweetalert2";
 
 function App() {
   const [currentAccount, setCurrentAccount] = useState<string>("");
-  const [admin, setAdmin] = useState<string>("");
-  const [nativeToken, setNativeToken] = useState<string>("");
-  const [signedTxXdr, setSignedTxXdr] = useState<string>("");
-  const [hashId, setHashId] = useState<string>("");
 
-  const [view, setView] = useState<View>(View.INITIALIZE);
+  async function connectWallet() {
+    const wallet = await walletService.connect();
+    setCurrentAccount(wallet);
+  }
 
   useEffect(() => {
-    async function connectWallet() {
-      const wallet = await walletService.connect();
-
-      setCurrentAccount(wallet);
-    }
     connectWallet();
   }, []);
 
-  const handleInitializeContract = async (
-    e: React.MouseEvent<HTMLButtonElement>
-  ) => {
-    e.preventDefault();
-
-    const client = await stellarService.buildClient<IContract>(currentAccount);
-    const xdr = (
-      await client.initialize({
-        admin: admin,
-        token: nativeToken,
-      })
-    ).toXDR();
-
-    const signedTx = await walletService.signTransaction(xdr);
-
-    setSignedTxXdr(signedTx.signedTxXdr);
-  };
-
-  const handleSubmitTransaction = async (
-    e: React.MouseEvent<HTMLButtonElement>
-  ) => {
-    e.preventDefault();
-
-    const hashId = await stellarService.submitTransaction(signedTxXdr);
-
-    setHashId(hashId);
+  const handleDeposit = () => {
+    Swal.fire({
+      title: "¿Cuánto deseas depositar?",
+      input: "number",
+      inputLabel: "Monto en USDC",
+      showCancelButton: true,
+      confirmButtonText: "Depositar",
+      cancelButtonText: "Cancelar",
+      inputValidator: (value) => {
+        if (!value || parseFloat(value) <= 0) {
+          return "Por favor ingresa un monto válido";
+        }
+      },
+    }).then((result) => {
+      if (result.isConfirmed) {
+        Swal.fire("¡Éxito!", `Has depositado ${result.value} USDC`, "success");
+      }
+    });
   };
 
   return (
-    <div className="flex flex-col items-center justify-center gap-4 w-full">
-      <h1>Bienvenidos al workshop organizado por BAF</h1>
+    <div className="w-full bg-gradient-to-br from-[#CEEDFB] to-[#E8DFFC] p-4">
+      <div className="min-w-2xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-1">
+            <img src="/img/logo.svg" alt="Vaquita Logo" className="w-8 h-8" />
+            <p className="text-xl font-bold">Vaquita</p>
+          </div>
+          <div className="bg-gray-100 rounded-lg px-4 py-2 text-sm font-mono">
+            {currentAccount ? (
+              currentAccount.slice(0, 6) + "..." + currentAccount.slice(-4)
+            ) : (
+              <button onClick={connectWallet}>Connect Wallet</button>
+            )}
+          </div>
+        </div>
 
-      <nav className="flex gap-4 p-4">
-        <Button onClick={() => setView(View.INITIALIZE)}>Initialize</Button>
-        <Button onClick={() => setView(View.CREATE)}>Create clients</Button>
-        <Button onClick={() => setView(View.DEPOSIT)}>Deposit</Button>
-        <Button onClick={() => setView(View.WITHDRAW)}>Withdraw</Button>
-      </nav>
+        {/* <Input label="Cuenta" value={currentAccount} disabled={true} /> */}
 
-      <Input label="Cuenta" value={currentAccount} disabled={true} />
-
-      {view === View.INITIALIZE && (
-        <>
-          <Divider />
-
-          <h2>Initialize</h2>
-          <Input
-            label="GX3SGA..."
-            value={admin}
-            onChange={({ target }) => setAdmin(target.value)}
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <StatsCard
+            icon={<FaSave />}
+            title="1M USDC"
+            subtitle="Total Staked"
           />
+          <StatsCard icon={<BiMoney />} title="±5% + 2%" subtitle="100K USDC" />
+        </div>
 
-          <Input
-            label="Native token"
-            value={nativeToken}
-            onChange={({ target }) => setNativeToken(target.value)}
+        {/* Vaquita Image */}
+        <div className="flex justify-center">
+          <img src="/img/success.svg" alt="Vaquita" className="w-48 h-48" />
+        </div>
+
+        {/* Deposit Button */}
+        <button
+          onClick={handleDeposit}
+          className="w-full bg-green-500 py-4 rounded-xl font-bold hover:bg-green-600 transition-colors"
+        >
+          Deposit Now
+        </button>
+
+        {/* Stats Bottom */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <StatsCard
+            icon={<BiMoney />}
+            title="300 USDC"
+            subtitle="Total Saved"
           />
-
-          <Button onClick={handleInitializeContract}>
-            Inicializar contrato
-          </Button>
-
-          {signedTxXdr.length > 0 && (
-            <>
-              <textarea
-                disabled
-                value={signedTxXdr}
-                className="w-full bg-slate-100 text-slate-700 rounded-xl p-2"
-                rows={10}
-                cols={40}
-              ></textarea>
-
-              <Button onClick={handleSubmitTransaction}>
-                Submitear transaccion a la red
-              </Button>
-
-              {hashId.length > 0 && <StellarExpertLink url={hashId} />}
-            </>
-          )}
-        </>
-      )}
-
-      {view === View.CREATE && (
-        <>
-          <Divider />
-
-          <h2>Create clients</h2>
-          <CreateClient adminWallet={currentAccount} />
-          <CreateReciever adminWallet={currentAccount} />
-        </>
-      )}
-
-      {view === View.DEPOSIT && (
-        <>
-          <Divider />
-
-          <h2>Send tokens</h2>
-          <SendTokens currentWallet={currentAccount} />
-        </>
-      )}
-
-      {view === View.WITHDRAW && (
-        <>
-          <Divider />
-
-          <h2>Withdraw tokens</h2>
-          <WithdrawTokens />
-        </>
-      )}
+          <StatsCard
+            icon={<FaSave />}
+            title="2 days"
+            subtitle="178 days remaining"
+          />
+        </div>
+      </div>
+      {/* Social Links */}
+      <div className="flex gap-4 my-4 w-full justify-end">
+        <button className="p-3 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
+          <FaTelegram className="text-2xl text-gray-600" />
+        </button>
+        <button className="p-3 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
+          <FaTwitter className="text-2xl text-gray-600" />
+        </button>
+      </div>
     </div>
   );
 }
